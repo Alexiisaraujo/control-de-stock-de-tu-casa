@@ -1,6 +1,6 @@
-// ===============================
-// ESTADO GLOBAL
-// ===============================
+// ======================
+// ESTADO
+// ======================
 
 let state = {
     productos: [],
@@ -8,19 +8,18 @@ let state = {
     historial: []
 };
 
-// ===============================
-// INICIO
-// ===============================
+// ======================
+// INIT
+// ======================
 
 document.addEventListener("DOMContentLoaded", () => {
     cargarDatos();
     renderTodo();
-    configurarValidaciones();
 });
 
-// ===============================
-// UTILIDADES
-// ===============================
+// ======================
+// STORAGE
+// ======================
 
 function guardarDatos() {
     localStorage.setItem("hogarApp", JSON.stringify(state));
@@ -31,68 +30,23 @@ function cargarDatos() {
     if (data) state = JSON.parse(data);
 }
 
+// ======================
+// NAVEGACION
+// ======================
+
 function mostrarSeccion(id) {
-    document.querySelectorAll(".seccion").forEach(sec => {
-        sec.classList.remove("activa");
-    });
+    document.querySelectorAll(".seccion").forEach(s => s.classList.remove("activa"));
     document.getElementById(id).classList.add("activa");
 }
 
-function mostrarFeedback(mensaje, tipo = "ok") {
-    const div = document.getElementById("feedback");
-    div.textContent = mensaje;
-    div.className = "feedback mostrar " + tipo;
-
-    setTimeout(() => {
-        div.classList.remove("mostrar");
-    }, 1500);
-}
-
-// ===============================
-// VALIDACIONES
-// ===============================
-
-function configurarValidaciones() {
-    const inputCantidad = document.getElementById("cantidadConsumida");
-    const selectProducto = document.getElementById("productoConsumido");
-    const boton = document.getElementById("btnRegistrarConsumo");
-
-    function validar() {
-        const id = selectProducto.value;
-        const cantidad = parseFloat(inputCantidad.value);
-        const producto = state.productos.find(p => p.id == id);
-
-        if (!producto || isNaN(cantidad) || cantidad <= 0 || cantidad > producto.cantidad) {
-            boton.disabled = true;
-        } else {
-            boton.disabled = false;
-        }
-    }
-
-    inputCantidad.addEventListener("input", validar);
-    selectProducto.addEventListener("change", validar);
-}
-
-// ===============================
-// RENDER GENERAL
-// ===============================
-
-function renderTodo() {
-    renderSelect();
-    renderStock();
-    generarListaAutomatica();
-    renderLista();
-    renderHistorial();
-}
-
-// ===============================
+// ======================
 // STOCK
-// ===============================
+// ======================
 
 function agregarProducto() {
-    const nombre = document.getElementById("nuevoNombre").value.trim();
-    const categoria = document.getElementById("nuevaCategoria").value;
-    const cantidad = parseFloat(document.getElementById("nuevaCantidad").value);
+    const nombre = nuevoNombre.value.trim();
+    const categoria = nuevaCategoria.value;
+    const cantidad = parseFloat(nuevaCantidad.value);
 
     if (!nombre || isNaN(cantidad) || cantidad < 0) return;
 
@@ -103,30 +57,11 @@ function agregarProducto() {
         cantidad
     });
 
+    nuevoNombre.value = "";
+    nuevaCantidad.value = "";
+
     guardarDatos();
     renderTodo();
-
-    document.getElementById("nuevoNombre").value = "";
-    document.getElementById("nuevaCantidad").value = "";
-}
-
-function renderStock() {
-    const cont = document.getElementById("listaStock");
-    cont.innerHTML = "";
-
-    state.productos.forEach(p => {
-        let color = "verde";
-        if (p.cantidad <= 1) color = "rojo";
-        else if (p.cantidad <= 2) color = "amarillo";
-
-        const div = document.createElement("div");
-        div.className = "item-stock " + color;
-        div.innerHTML = `
-            <span>${p.nombre} (${p.cantidad})</span>
-            <button onclick="eliminarProducto(${p.id})">X</button>
-        `;
-        cont.appendChild(div);
-    });
 }
 
 function eliminarProducto(id) {
@@ -135,129 +70,200 @@ function eliminarProducto(id) {
     renderTodo();
 }
 
-function renderSelect() {
-    const select = document.getElementById("productoConsumido");
-    select.innerHTML = "";
-
-    state.productos.forEach(p => {
-        const option = document.createElement("option");
-        option.value = p.id;
-        option.textContent = `${p.nombre} (${p.cantidad})`;
-        select.appendChild(option);
-    });
-}
-
-// ===============================
-// CONSUMO
-// ===============================
+// ======================
+// CONSUMO (CORREGIDO)
+// ======================
 
 function registrarConsumo() {
-    const id = document.getElementById("productoConsumido").value;
-    const inputCantidad = document.getElementById("cantidadConsumida");
-    const cantidad = parseFloat(inputCantidad.value);
+    const id = productoConsumido.value;
+    const cantidad = parseFloat(cantidadConsumida.value);
 
     const producto = state.productos.find(p => p.id == id);
-    if (!producto) return;
+    if (!producto || isNaN(cantidad) || cantidad <= 0) return;
 
     if (cantidad > producto.cantidad) {
-        mostrarFeedback("Stock insuficiente", "error");
+        alert("No podés consumir más de lo que hay.");
         return;
     }
 
-    producto.cantidad -= cantidad;
+    producto.cantidad = parseFloat((producto.cantidad - cantidad).toFixed(2));
+
+    cantidadConsumida.value = "";
 
     guardarDatos();
     renderTodo();
-
-    inputCantidad.value = "";
-    mostrarFeedback("Consumo registrado");
 }
 
-// ===============================
-// LISTA AUTOMÁTICA
-// ===============================
+// ======================
+// LISTA AUTOMATICA
+// ======================
 
 function generarListaAutomatica() {
-    state.listaActiva = state.productos
-        .filter(p => p.cantidad <= 1)
-        .map(p => ({
-            nombre: p.nombre,
-            comprado: false,
-            precio: null,
-            supermercado: ""
-        }));
+    const faltantes = state.productos.filter(p => p.cantidad <= 1);
+
+    faltantes.forEach(p => {
+        if (!state.listaActiva.find(i => i.productoId === p.id)) {
+            state.listaActiva.push({
+                productoId: p.id,
+                nombre: p.nombre,
+                comprado: false,
+                precio: ""
+            });
+        }
+    });
 }
 
+// ======================
+// RENDER
+// ======================
+
+function renderTodo() {
+    generarListaAutomatica();
+    renderStock();
+    renderSelect();
+    renderLista();
+    renderHistorial();
+}
+
+function renderStock() {
+    listaStock.innerHTML = "";
+
+    state.productos.forEach(p => {
+        let color = "verde";
+        if (p.cantidad <= 1) color = "rojo";
+        else if (p.cantidad <= 2) color = "amarillo";
+
+        listaStock.innerHTML += `
+            <div class="item-stock ${color}">
+                <span>${p.nombre} (${p.cantidad})</span>
+                <button onclick="eliminarProducto(${p.id})">X</button>
+            </div>
+        `;
+    });
+}
+
+function renderSelect() {
+    productoConsumido.innerHTML = "";
+    state.productos.forEach(p => {
+        productoConsumido.innerHTML += `
+            <option value="${p.id}">
+                ${p.nombre} (${p.cantidad})
+            </option>
+        `;
+    });
+}
+
+// ======================
+// LISTA DE COMPRA (MEJORADA)
+// ======================
+
 function renderLista() {
-    const cont = document.getElementById("listaCompra");
-    cont.innerHTML = "";
+    listaCompra.innerHTML = "";
 
     state.listaActiva.forEach((item, index) => {
-        const div = document.createElement("div");
-        div.className = "item-lista";
-
-        div.innerHTML = `
-            <input type="checkbox" onchange="marcarComprado(${index}, this.checked)">
-            <span>${item.nombre}</span>
+        listaCompra.innerHTML += `
+            <div class="item-lista">
+                <input type="checkbox" 
+                    ${item.comprado ? "checked" : ""} 
+                    onchange="marcarComprado(${index}, this.checked)"
+                >
+                <span>${item.nombre}</span>
+                <input type="number" 
+                    placeholder="Precio"
+                    value="${item.precio}"
+                    onchange="guardarPrecio(${index}, this.value)"
+                    step="0.01"
+                    min="0"
+                >
+            </div>
         `;
-
-        cont.appendChild(div);
     });
 }
 
 function marcarComprado(index, estado) {
     state.listaActiva[index].comprado = estado;
-
-    if (estado) {
-        const precio = prompt("Precio pagado:");
-        const superm = prompt("Supermercado:");
-
-        state.listaActiva[index].precio = parseFloat(precio) || 0;
-        state.listaActiva[index].supermercado = superm || "";
-    }
-
     guardarDatos();
 }
 
-// ===============================
-// CIERRE DE COMPRA
-// ===============================
+function guardarPrecio(index, valor) {
+    state.listaActiva[index].precio = parseFloat(valor) || "";
+    guardarDatos();
+}
+
+// ======================
+// FINALIZAR COMPRA (LOGICA CORRECTA)
+// ======================
 
 function cerrarLista() {
-    if (state.listaActiva.length === 0) return;
 
-    const fecha = new Date().toISOString().split("T")[0];
+    const comprados = state.listaActiva.filter(i => i.comprado);
 
-    state.historial.push({
-        fecha,
-        items: [...state.listaActiva]
+    if (comprados.length === 0) return;
+
+    const supermercado = prompt("¿En qué supermercado compraste? (Opcional)") || "";
+
+    const fecha = new Date();
+    const mes = fecha.toLocaleString("default", { month: "long" });
+    const anio = fecha.getFullYear();
+
+    comprados.forEach(item => {
+        const producto = state.productos.find(p => p.id == item.productoId);
+        if (producto) {
+            producto.cantidad += 1; // suma 1 unidad comprada
+        }
     });
 
-    state.listaActiva = [];
+    state.historial.push({
+        fecha: fecha.toISOString(),
+        mes,
+        anio,
+        supermercado,
+        items: comprados
+    });
+
+    // dejar solo los NO comprados en lista
+    state.listaActiva = state.listaActiva.filter(i => !i.comprado);
 
     guardarDatos();
     renderTodo();
-
-    mostrarFeedback("Compra guardada");
 }
 
-// ===============================
-// HISTORIAL
-// ===============================
+// ======================
+// HISTORIAL POR MES
+// ======================
 
 function renderHistorial() {
-    const cont = document.getElementById("listaHistorial");
-    cont.innerHTML = "";
 
-    state.historial
-        .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
-        .forEach(h => {
-            const div = document.createElement("div");
-            div.className = "item-historial";
-            div.innerHTML = `
-                <strong>${h.fecha}</strong>
-                <div>Total items: ${h.items.length}</div>
-            `;
-            cont.appendChild(div);
+    listaHistorial.innerHTML = "";
+
+    const agrupado = {};
+
+    state.historial.forEach(h => {
+        const clave = `${h.mes} ${h.anio}`;
+        if (!agrupado[clave]) agrupado[clave] = [];
+        agrupado[clave].push(h);
+    });
+
+    Object.keys(agrupado).forEach(mes => {
+
+        listaHistorial.innerHTML += `<h3>${mes}</h3>`;
+
+        agrupado[mes].forEach(compra => {
+
+            compra.items.forEach(item => {
+
+                listaHistorial.innerHTML += `
+                    <div class="item-historial">
+                        <div><strong>${item.nombre}</strong></div>
+                        <div>Precio: ${item.precio || "No cargado"}</div>
+                        <div>Super: ${compra.supermercado || "No especificado"}</div>
+                    </div>
+                `;
+
+            });
+
         });
+
+    });
+
 }
