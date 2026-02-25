@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Stock Hogar</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="app-header">
+        <h1>Control Hogar</h1>
+    </header>
+
+    <!-- NAVEGACIÓN INFERIOR (mobile first) -->
+    <nav class="bottom-nav">
+        <button onclick="mostrarSeccion('inicio')">Inicio</button>
+        <button onclick="mostrarSeccion('stock')">Stock</button>
+        <button onclick="mostrarSeccion('lista')">Lista</button>
+        <button onclick="mostrarSeccion('historial')">Historial</button>
+    </nav>
+
+    <!-- ========================= -->
+    <!-- INICIO -->
+    <!-- ========================= -->
+    <section id="inicio" class="seccion activa">
+
+        <div class="card">
+            <h2>Registrar consumo</h2>
+
+            <label>Producto</label>
+            <select id="productoConsumido"></select>
+
+            <label>Cantidad gastada</label>
+            <input 
+                type="number" 
+                id="cantidadConsumida" 
+                min="0.1" 
+                step="0.1" 
+                placeholder="Ej: 0.5"
+            >
+
+            <button 
+                id="btnRegistrarConsumo"
+                onclick="registrarConsumo()"
+            >
+                Registrar
+            </button>
+        </div>
+
+    </section>
+
+    <!-- ========================= -->
+    <!-- STOCK -->
+    <!-- ========================= -->
+    <section id="stock" class="seccion">
+
+        <div class="card">
+            <h2>Agregar producto</h2>
+
+            <input type="text" id="nuevoNombre" placeholder="Nombre del producto">
+
+            <select id="nuevaCategoria">
+                <option value="frutas">Frutas y Verduras</option>
+                <option value="generales">Productos Generales</option>
+                <option value="limpieza">Limpieza</option>
+            </select>
+
+            <input 
+                type="number" 
+                id="nuevaCantidad" 
+                min="0" 
+                step="0.1" 
+                placeholder="Cantidad inicial"
+            >
+
+            <button onclick="agregarProducto()">Agregar</button>
+        </div>
+
+        <div class="card">
+            <h2>Stock actual</h2>
+            <div id="listaStock"></div>
+        </div>
+
+    </section>
+
+    <!-- ========================= -->
+    <!-- LISTA DE COMPRA -->
+    <!-- ========================= -->
+    <section id="lista" class="seccion">
+
+        <div class="card">
+            <h2>Lista automática</h2>
+            <div id="listaCompra"></div>
+        </div>
+
+        <div class="card">
+            <h3>Agregar manual</h3>
+            <input type="text" id="manualNombre" placeholder="Producto">
+            <button onclick="agregarManual()">Agregar</button>
+        </div>
+
+        <div class="card">
+            <button class="btn-principal" onclick="cerrarLista()">
+                Finalizar compra
+            </button>
+        </div>
+
+    </section>
+
+    <!-- ========================= -->
+    <!-- HISTORIAL -->
+    <!-- ========================= -->
+    <section id="historial" class="seccion">
+
+        <div class="card">
+            <h2>Historial de compras</h2>
+            <div id="listaHistorial"></div>
+        </div>
+
+    </section>
+
+    <!-- Feedback flotante -->
+    <div id="feedback" class="feedback oculto"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
