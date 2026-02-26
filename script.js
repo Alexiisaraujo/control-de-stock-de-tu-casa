@@ -1,6 +1,6 @@
-// ======================
-// ESTADO
-// ======================
+// =========================
+// ESTADO GLOBAL
+// =========================
 
 let state = {
     productos: [],
@@ -8,18 +8,18 @@ let state = {
     historial: []
 };
 
-// ======================
+// =========================
 // INIT
-// ======================
+// =========================
 
 document.addEventListener("DOMContentLoaded", () => {
     cargarDatos();
     renderTodo();
 });
 
-// ======================
+// =========================
 // STORAGE
-// ======================
+// =========================
 
 function guardarDatos() {
     localStorage.setItem("hogarApp", JSON.stringify(state));
@@ -30,18 +30,18 @@ function cargarDatos() {
     if (data) state = JSON.parse(data);
 }
 
-// ======================
+// =========================
 // NAVEGACION
-// ======================
+// =========================
 
 function mostrarSeccion(id) {
     document.querySelectorAll(".seccion").forEach(s => s.classList.remove("activa"));
     document.getElementById(id).classList.add("activa");
 }
 
-// ======================
+// =========================
 // STOCK
-// ======================
+// =========================
 
 function agregarProducto() {
     const nombre = nuevoNombre.value.trim();
@@ -54,7 +54,7 @@ function agregarProducto() {
         id: Date.now(),
         nombre,
         categoria,
-        cantidad
+        cantidad: parseFloat(cantidad.toFixed(2))
     });
 
     nuevoNombre.value = "";
@@ -70,15 +70,16 @@ function eliminarProducto(id) {
     renderTodo();
 }
 
-// ======================
-// CONSUMO (CORREGIDO)
-// ======================
+// =========================
+// CONSUMO
+// =========================
 
 function registrarConsumo() {
     const id = productoConsumido.value;
     const cantidad = parseFloat(cantidadConsumida.value);
 
     const producto = state.productos.find(p => p.id == id);
+
     if (!producto || isNaN(cantidad) || cantidad <= 0) return;
 
     if (cantidad > producto.cantidad) {
@@ -87,35 +88,56 @@ function registrarConsumo() {
     }
 
     producto.cantidad = parseFloat((producto.cantidad - cantidad).toFixed(2));
-
     cantidadConsumida.value = "";
 
     guardarDatos();
     renderTodo();
 }
 
-// ======================
+// =========================
 // LISTA AUTOMATICA
-// ======================
+// =========================
 
 function generarListaAutomatica() {
-    const faltantes = state.productos.filter(p => p.cantidad <= 1);
-
-    faltantes.forEach(p => {
-        if (!state.listaActiva.find(i => i.productoId === p.id)) {
-            state.listaActiva.push({
-                productoId: p.id,
-                nombre: p.nombre,
-                comprado: false,
-                precio: ""
-            });
-        }
-    });
+    state.productos
+        .filter(p => p.cantidad <= 1)
+        .forEach(p => {
+            if (!state.listaActiva.find(i => i.productoId === p.id)) {
+                state.listaActiva.push({
+                    productoId: p.id,
+                    nombre: p.nombre,
+                    comprado: false,
+                    cantidadComprada: "",
+                    precio: ""
+                });
+            }
+        });
 }
 
-// ======================
-// RENDER
-// ======================
+// =========================
+// AGREGAR MANUAL
+// =========================
+
+function agregarManual() {
+    const nombre = manualNombre.value.trim();
+    if (!nombre) return;
+
+    state.listaActiva.push({
+        productoId: null,
+        nombre,
+        comprado: false,
+        cantidadComprada: "",
+        precio: ""
+    });
+
+    manualNombre.value = "";
+    guardarDatos();
+    renderLista();
+}
+
+// =========================
+// RENDER GENERAL
+// =========================
 
 function renderTodo() {
     generarListaAutomatica();
@@ -125,10 +147,15 @@ function renderTodo() {
     renderHistorial();
 }
 
+// =========================
+// RENDER STOCK
+// =========================
+
 function renderStock() {
     listaStock.innerHTML = "";
 
     state.productos.forEach(p => {
+
         let color = "verde";
         if (p.cantidad <= 1) color = "rojo";
         else if (p.cantidad <= 2) color = "amarillo";
@@ -142,8 +169,13 @@ function renderStock() {
     });
 }
 
+// =========================
+// RENDER SELECT CONSUMO
+// =========================
+
 function renderSelect() {
     productoConsumido.innerHTML = "";
+
     state.productos.forEach(p => {
         productoConsumido.innerHTML += `
             <option value="${p.id}">
@@ -153,28 +185,42 @@ function renderSelect() {
     });
 }
 
-// ======================
-// LISTA DE COMPRA (MEJORADA)
-// ======================
+// =========================
+// RENDER LISTA
+// =========================
 
 function renderLista() {
+
     listaCompra.innerHTML = "";
 
     state.listaActiva.forEach((item, index) => {
+
         listaCompra.innerHTML += `
             <div class="item-lista">
-                <input type="checkbox" 
-                    ${item.comprado ? "checked" : ""} 
+
+                <input type="checkbox"
+                    ${item.comprado ? "checked" : ""}
                     onchange="marcarComprado(${index}, this.checked)"
                 >
+
                 <span>${item.nombre}</span>
-                <input type="number" 
+
+                <input type="number"
+                    placeholder="Cant."
+                    value="${item.cantidadComprada}"
+                    min="0"
+                    step="0.1"
+                    onchange="guardarCantidad(${index}, this.value)"
+                >
+
+                <input type="number"
                     placeholder="Precio"
                     value="${item.precio}"
-                    onchange="guardarPrecio(${index}, this.value)"
-                    step="0.01"
                     min="0"
+                    step="0.01"
+                    onchange="guardarPrecio(${index}, this.value)"
                 >
+
             </div>
         `;
     });
@@ -185,52 +231,88 @@ function marcarComprado(index, estado) {
     guardarDatos();
 }
 
+function guardarCantidad(index, valor) {
+    state.listaActiva[index].cantidadComprada = parseFloat(valor) || "";
+    guardarDatos();
+}
+
 function guardarPrecio(index, valor) {
     state.listaActiva[index].precio = parseFloat(valor) || "";
     guardarDatos();
 }
 
-// ======================
-// FINALIZAR COMPRA (LOGICA CORRECTA)
-// ======================
+// =========================
+// FINALIZAR COMPRA
+// =========================
 
 function cerrarLista() {
 
     const comprados = state.listaActiva.filter(i => i.comprado);
-
     if (comprados.length === 0) return;
 
-    const supermercado = prompt("¿En qué supermercado compraste? (Opcional)") || "";
+    const supermercado = prompt("¿Supermercado? (Opcional)") || "";
 
     const fecha = new Date();
     const mes = fecha.toLocaleString("default", { month: "long" });
     const anio = fecha.getFullYear();
 
     comprados.forEach(item => {
-        const producto = state.productos.find(p => p.id == item.productoId);
-        if (producto) {
-            producto.cantidad += 1; // suma 1 unidad comprada
+
+        const cantidadFinal =
+            item.cantidadComprada && item.cantidadComprada > 0
+                ? item.cantidadComprada
+                : 1;
+
+        item.cantidadComprada = cantidadFinal;
+
+        // 🔹 Buscar si ya existe en stock
+        let producto = null;
+
+        if (item.productoId) {
+            producto = state.productos.find(p => p.id == item.productoId);
+        } else {
+            // Buscar por nombre (por si ya existe uno igual)
+            producto = state.productos.find(
+                p => p.nombre.toLowerCase() === item.nombre.toLowerCase()
+            );
         }
+
+        if (producto) {
+            // Sumar al stock existente
+            producto.cantidad = parseFloat(
+                (producto.cantidad + cantidadFinal).toFixed(2)
+            );
+        } else {
+            // Crear nuevo producto automáticamente
+            state.productos.push({
+                id: Date.now() + Math.random(),
+                nombre: item.nombre,
+                categoria: "generales",
+                cantidad: cantidadFinal
+            });
+        }
+
     });
 
+    // Guardar historial
     state.historial.push({
         fecha: fecha.toISOString(),
         mes,
         anio,
         supermercado,
-        items: comprados
+        items: JSON.parse(JSON.stringify(comprados))
     });
 
-    // dejar solo los NO comprados en lista
+    // Dejar solo los no comprados
     state.listaActiva = state.listaActiva.filter(i => !i.comprado);
 
     guardarDatos();
     renderTodo();
 }
 
-// ======================
-// HISTORIAL POR MES
-// ======================
+// =========================
+// HISTORIAL AGRUPADO POR MES
+// =========================
 
 function renderHistorial() {
 
@@ -255,15 +337,12 @@ function renderHistorial() {
                 listaHistorial.innerHTML += `
                     <div class="item-historial">
                         <div><strong>${item.nombre}</strong></div>
+                        <div>Cantidad: ${item.cantidadComprada}</div>
                         <div>Precio: ${item.precio || "No cargado"}</div>
                         <div>Super: ${compra.supermercado || "No especificado"}</div>
                     </div>
                 `;
-
             });
-
         });
-
     });
-
 }
