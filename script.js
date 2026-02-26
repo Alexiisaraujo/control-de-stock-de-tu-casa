@@ -296,13 +296,13 @@ function cerrarLista() {
 
     // Guardar historial
     state.historial.push({
-        fecha: fecha.toISOString(),
-        mes,
-        anio,
-        supermercado,
-        items: JSON.parse(JSON.stringify(comprados))
-    });
-
+    id: Date.now(),
+    fecha: fecha.toISOString(),
+    mes,
+    anio,
+    supermercado,
+    items: JSON.parse(JSON.stringify(comprados))
+});
     // Dejar solo los no comprados
     state.listaActiva = state.listaActiva.filter(i => !i.comprado);
 
@@ -316,33 +316,128 @@ function cerrarLista() {
 
 function renderHistorial() {
 
-    listaHistorial.innerHTML = "";
+    const cont = document.getElementById("historial");
+    cont.innerHTML = "";
 
+    if (state.historial.length === 0) {
+        cont.innerHTML = "<p>No hay compras todavía</p>";
+        return;
+    }
+
+    // 🔹 ORDENAR POR FECHA DESC
+    const historialOrdenado = [...state.historial].sort(
+        (a, b) => new Date(b.fecha) - new Date(a.fecha)
+    );
+
+    // 🔹 AGRUPAR POR MES
     const agrupado = {};
 
-    state.historial.forEach(h => {
-        const clave = `${h.mes} ${h.anio}`;
+    historialOrdenado.forEach(compra => {
+        const clave = compra.mes + " " + compra.anio;
         if (!agrupado[clave]) agrupado[clave] = [];
-        agrupado[clave].push(h);
+        agrupado[clave].push(compra);
     });
 
-    Object.keys(agrupado).forEach(mes => {
+    // 🔹 RESUMEN GENERAL
+    let totalHistorico = 0;
 
-        listaHistorial.innerHTML += `<h3>${mes}</h3>`;
-
-        agrupado[mes].forEach(compra => {
-
-            compra.items.forEach(item => {
-
-                listaHistorial.innerHTML += `
-                    <div class="item-historial">
-                        <div><strong>${item.nombre}</strong></div>
-                        <div>Cantidad: ${item.cantidadComprada}</div>
-                        <div>Precio: ${item.precio || "No cargado"}</div>
-                        <div>Super: ${compra.supermercado || "No especificado"}</div>
-                    </div>
-                `;
-            });
+    state.historial.forEach(compra => {
+        compra.items.forEach(i => {
+            totalHistorico += (i.precio || 0) * (i.cantidadComprada || 1);
         });
     });
+
+    const resumen = document.createElement("div");
+    resumen.className = "resumen-general";
+    resumen.innerHTML = `
+        <h3>Total histórico: $${totalHistorico.toFixed(2)}</h3>
+    `;
+    cont.appendChild(resumen);
+
+    // 🔹 RENDER POR MES
+    Object.keys(agrupado).forEach(mesClave => {
+
+        const comprasMes = agrupado[mesClave];
+
+        let totalMes = 0;
+
+        comprasMes.forEach(compra => {
+            compra.items.forEach(i => {
+                totalMes += (i.precio || 0) * (i.cantidadComprada || 1);
+            });
+        });
+
+        const mesDiv = document.createElement("div");
+        mesDiv.className = "mes-bloque";
+
+        mesDiv.innerHTML = `
+            <h2>${mesClave} — Total: $${totalMes.toFixed(2)}</h2>
+        `;
+
+        comprasMes.forEach(compra => {
+
+            let totalCompra = 0;
+
+            compra.items.forEach(i => {
+                totalCompra += (i.precio || 0) * (i.cantidadComprada || 1);
+            });
+
+            const compraDiv = document.createElement("div");
+            compraDiv.className = "compra-card";
+
+            let tabla = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cant</th>
+                            <th>Precio</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            compra.items.forEach(i => {
+                const subtotal = (i.precio || 0) * (i.cantidadComprada || 1);
+                tabla += `
+                    <tr>
+                        <td>${i.nombre}</td>
+                        <td>${i.cantidadComprada || 1}</td>
+                        <td>$${(i.precio || 0).toFixed(2)}</td>
+                        <td>$${subtotal.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            tabla += `
+                    </tbody>
+                </table>
+            `;
+
+            compraDiv.innerHTML = `
+                <div class="compra-header">
+                    <strong>${new Date(compra.fecha).toLocaleDateString()}</strong>
+                    ${compra.supermercado ? " - " + compra.supermercado : ""}
+                    <span>Total: $${totalCompra.toFixed(2)}</span>
+                    <button onclick="eliminarCompra(${compra.id})">Eliminar</button>
+                </div>
+                ${tabla}
+            `;
+
+            mesDiv.appendChild(compraDiv);
+        });
+
+        cont.appendChild(mesDiv);
+    });
+
+}
+function eliminarCompra(id) {
+
+    if (!confirm("¿Eliminar esta compra?")) return;
+
+    state.historial = state.historial.filter(c => c.id !== id);
+
+    guardarDatos();
+    renderTodo();
 }
