@@ -8,12 +8,19 @@
 </head>
 <body>
 
-    <!-- HEADER -->
+    <!-- ========================= -->
+    <!-- HEADER SUPERIOR -->
+    <!-- Muestra el título de la app -->
+    <!-- ========================= -->
     <header class="app-header">
         <h1>Control Hogar</h1>
     </header>
 
-    <!-- NAVEGACIÓN INFERIOR (mobile first) -->
+
+    <!-- ========================= -->
+    <!-- NAVEGACIÓN INFERIOR -->
+    <!-- Cambia entre secciones -->
+    <!-- ========================= -->
     <nav class="bottom-nav">
         <button onclick="mostrarSeccion('inicio')">Inicio</button>
         <button onclick="mostrarSeccion('stock')">Stock</button>
@@ -21,63 +28,79 @@
         <button onclick="mostrarSeccion('historial')">Historial</button>
     </nav>
 
+
     <!-- ========================= -->
-    <!-- INICIO -->
+    <!-- SECCIÓN INICIO -->
+    <!-- Registrar consumo de productos -->
     <!-- ========================= -->
     <section id="inicio" class="seccion activa">
 
         <div class="card">
             <h2>Registrar consumo</h2>
 
+            <!-- Selector de producto existente -->
             <label>Producto</label>
             <select id="productoConsumido"></select>
 
+            <!-- Cantidad a descontar del stock -->
             <label>Cantidad gastada</label>
             <input 
                 type="number" 
-                id="cantidadConsumida" 
-                min="0.1" 
-                step="0.1" 
+                id="cantidadConsumida"
+                min="0.1"
+                step="0.1"
                 placeholder="Ej: 0.5"
             >
 
-            <button 
-                id="btnRegistrarConsumo"
-                onclick="registrarConsumo()"
-            >
+            <!-- Ejecuta registrarConsumo() -->
+            <button onclick="registrarConsumo()">
                 Registrar
             </button>
         </div>
 
     </section>
 
+
     <!-- ========================= -->
-    <!-- STOCK -->
+    <!-- SECCIÓN STOCK -->
+    <!-- Agregar y visualizar productos -->
     <!-- ========================= -->
     <section id="stock" class="seccion">
 
+        <!-- Formulario para agregar producto -->
         <div class="card">
             <h2>Agregar producto</h2>
 
-            <input type="text" id="nuevoNombre" placeholder="Nombre del producto">
+            <!-- Nombre del producto -->
+            <input 
+                type="text"
+                id="nuevoNombre"
+                placeholder="Nombre del producto"
+            >
 
+            <!-- Categoría -->
             <select id="nuevaCategoria">
                 <option value="frutas">Frutas y Verduras</option>
                 <option value="generales">Productos Generales</option>
                 <option value="limpieza">Limpieza</option>
             </select>
 
+            <!-- Cantidad inicial -->
             <input 
-                type="number" 
-                id="nuevaCantidad" 
-                min="0" 
-                step="0.1" 
+                type="number"
+                id="nuevaCantidad"
+                min="0"
+                step="0.1"
                 placeholder="Cantidad inicial"
             >
 
-            <button onclick="agregarProducto()">Agregar</button>
+            <!-- Ejecuta agregarProducto() -->
+            <button onclick="agregarProducto()">
+                Agregar
+            </button>
         </div>
 
+        <!-- Lista dinámica del stock -->
         <div class="card">
             <h2>Stock actual</h2>
             <div id="listaStock"></div>
@@ -85,22 +108,33 @@
 
     </section>
 
+
     <!-- ========================= -->
-    <!-- LISTA DE COMPRA -->
+    <!-- SECCIÓN LISTA DE COMPRA -->
+    <!-- Generada automáticamente + manual -->
     <!-- ========================= -->
     <section id="lista" class="seccion">
 
+        <!-- Lista automática según stock bajo -->
         <div class="card">
             <h2>Lista automática</h2>
             <div id="listaCompra"></div>
         </div>
 
+        <!-- Agregar producto manualmente -->
         <div class="card">
             <h3>Agregar manual</h3>
-            <input type="text" id="manualNombre" placeholder="Producto">
-            <button onclick="agregarManual()">Agregar</button>
+            <input 
+                type="text"
+                id="manualNombre"
+                placeholder="Producto"
+            >
+            <button onclick="agregarManual()">
+                Agregar
+            </button>
         </div>
 
+        <!-- Finalizar compra -->
         <div class="card">
             <button class="btn-principal" onclick="cerrarLista()">
                 Finalizar compra
@@ -109,21 +143,36 @@
 
     </section>
 
+
     <!-- ========================= -->
-    <!-- HISTORIAL -->
+    <!-- SECCIÓN HISTORIAL -->
+    <!-- Muestra compras agrupadas por mes -->
     <!-- ========================= -->
     <section id="historial" class="seccion">
 
         <div class="card">
             <h2>Historial de compras</h2>
+
+            <!-- IMPORTANTE:
+                 Este div es el que usa renderHistorial().
+                 Antes estabas usando mal el id.
+            -->
             <div id="listaHistorial"></div>
+
         </div>
 
     </section>
 
-    <!-- Feedback flotante -->
-    <div id="feedback" class="feedback oculto"></div>
 
+    <!-- ========================= -->
+    <!-- FEEDBACK FLOTANTE -->
+    <!-- Mensajes temporales (éxito / error) -->
+    <!-- ========================= -->
+    <div id="feedback" class="feedback"></div>
+
+
+    <!-- Script principal -->
     <script src="script.js"></script>
+
 </body>
 </html>
